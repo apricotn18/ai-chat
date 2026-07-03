@@ -9,7 +9,7 @@ const notoSans = Noto_Sans({
 });
 
 export const metadata: Metadata = {
-	title: 'AIチャット',
+	title: '星座占いAIチャット',
 };
 
 export default function RootLayout({
