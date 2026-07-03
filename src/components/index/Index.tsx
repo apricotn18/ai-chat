@@ -55,6 +55,9 @@ export default function Index() {
 	return (
 		<section id="ask-ai" className={styles.container}>
 			<div className={styles.inner}>
+				<header className={styles.header}>
+					星座占い
+				</header>
 				<ChatWindow
 					messages={messages}
 					isLoading={isLoading}
