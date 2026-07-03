@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GENAI_TOKEN });
 const SYSTEM_PROMPT = process.env.SYSTEM_PROMPT;
+const mockText = process.env.MOCK_TEXT;
 
 type GeminiErrorBody = {
 	error?: { code?: number; status?: string };
@@ -25,7 +26,6 @@ function toUserMessage(e: unknown): { message: string; status: number } {
 	if (code === 404) {
 		return { message: 'AIモデルが見つかりません。', status: 404 };
 	}
-	console.error('[ask-ai]', e);
 	return { message: 'エラーが発生しました。もう一度お試しください。', status: 500 };
 }
 
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
 		const { message } = await req.json() as { message: string };
 
 		if (process.env.GENAI_MOCK === 'true') {
-			return NextResponse.json({ reply: `（モック）「${message}」へのAI返答です。` });
+			return NextResponse.json({ reply: `（モック）「${message}」へのAI返答です。` + mockText });
 		}
 
 		const response = await ai.models.generateContent({

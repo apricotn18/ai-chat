@@ -14,7 +14,6 @@ export function ChatWindow({ messages, isLoading }: Props) {
 
 	useEffect(() => {
 		const offsetTop = lastRef.current?.offsetTop - scrollRef.current?.offsetTop;
-		console.log(lastRef.current?.offsetTop, scrollRef.current?.offsetTop);
 		scrollRef.current?.scrollTo({
 			top: offsetTop - 18,
 			behavior: "smooth",
