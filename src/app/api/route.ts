@@ -1,9 +1,14 @@
 import { GoogleGenAI } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
+import { isRateLimited } from "@/lib/rateLimit";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GENAI_TOKEN });
 const SYSTEM_PROMPT = process.env.SYSTEM_PROMPT;
 const mockText = process.env.MOCK_TEXT;
+
+const RATE_LIMIT = 10;
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const MAX_MESSAGE_LENGTH = 1000;
 
 type GeminiErrorBody = {
 	error?: { code?: number; status?: string };
@@ -31,7 +36,19 @@ function toUserMessage(e: unknown): { message: string; status: number } {
 
 export async function POST(req: NextRequest) {
 	try {
-		const { message } = await req.json() as { message: string };
+		const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+		if (isRateLimited(ip, RATE_LIMIT, RATE_LIMIT_WINDOW_MS)) {
+			return NextResponse.json({ error: 'リクエストが多すぎます。しばらくしてからお試しください' }, { status: 429 });
+		}
+
+		const { message } = await req.json() as { message: unknown };
+
+		if (typeof message !== 'string' || !message.trim()) {
+			return NextResponse.json({ error: 'メッセージを入力してください' }, { status: 400 });
+		}
+		if (message.length > MAX_MESSAGE_LENGTH) {
+			return NextResponse.json({ error: `メッセージは${MAX_MESSAGE_LENGTH}文字以内で入力してください` }, { status: 400 });
+		}
 
 		if (process.env.GENAI_MOCK === 'true') {
 			return NextResponse.json({ reply: `（モック）「${message}」へのAI返答です。` + mockText });
@@ -44,6 +61,7 @@ export async function POST(req: NextRequest) {
 		});
 		return NextResponse.json({ reply: response.text });
 	} catch (e) {
+		console.error(e);
 		const { message, status } = toUserMessage(e);
 		return NextResponse.json({ error: message }, { status });
 	}
